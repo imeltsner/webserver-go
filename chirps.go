@@ -8,15 +8,12 @@ import (
 	"github.com/hashicorp/go-set/v2"
 )
 
-func validateHandler(w http.ResponseWriter, r *http.Request) {
-	type Chirp struct {
-		Body string `json:"body"`
-	}
+type Chirp struct {
+	ID   int    `json:"id"`
+	Body string `json:"body"`
+}
 
-	type response struct {
-		Response string `json:"cleaned_body"`
-	}
-
+func createChirpHandler(w http.ResponseWriter, r *http.Request) {
 	decoder := json.NewDecoder(r.Body)
 	chirp := Chirp{}
 	err := decoder.Decode(&chirp)
@@ -32,10 +29,10 @@ func validateHandler(w http.ResponseWriter, r *http.Request) {
 
 	badWords := set.From[string]([]string{"kerfuffle", "sharbert", "fornax"})
 	cleaned := removeBadWords(chirp.Body, *badWords)
+	chirp.Body = cleaned
+	chirp.ID = 1
 
-	respondWithJSON(w, 200, response{
-		Response: cleaned,
-	})
+	respondWithJSON(w, 201, chirp)
 }
 
 func removeBadWords(words string, badWords set.Set[string]) string {

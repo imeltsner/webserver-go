@@ -43,6 +43,8 @@ func main() {
 	mux.HandleFunc("GET /admin/metrics", cfg.metricHandler)
 	mux.HandleFunc("/api/reset", cfg.resetHandler)
 	mux.HandleFunc("POST /api/chirps", cfg.createChirpHandler)
+	mux.HandleFunc("GET /api/chirps", cfg.getChirpsHandler)
+	mux.HandleFunc("GET /api/chirps/{chirpID}", cfg.getChirpHandler)
 
 	log.Printf("Serving on port: %s\n", port)
 	log.Fatal(server.ListenAndServe())

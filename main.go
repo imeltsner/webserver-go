@@ -3,7 +3,14 @@ package main
 import (
 	"log"
 	"net/http"
+
+	"github.com/imeltsner/webserver-go/internal/database"
 )
+
+type apiConfig struct {
+	fileserverHits int
+	db             *database.DB
+}
 
 func healthHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
@@ -19,7 +26,15 @@ func main() {
 		Addr:    ":" + port,
 		Handler: mux,
 	}
+
+	db, err := database.NewDB("database.json")
+	if err != nil {
+		log.Printf("Error creating DB: %s", err)
+		return
+	}
+
 	cfg := apiConfig{
+		db:             db,
 		fileserverHits: 0,
 	}
 
@@ -27,7 +42,7 @@ func main() {
 	mux.HandleFunc("GET /api/healthz", healthHandler)
 	mux.HandleFunc("GET /admin/metrics", cfg.metricHandler)
 	mux.HandleFunc("/api/reset", cfg.resetHandler)
-	mux.HandleFunc("POST /api/chirps", createChirpHandler)
+	mux.HandleFunc("POST /api/chirps", cfg.createChirpHandler)
 
 	log.Printf("Serving on port: %s\n", port)
 	log.Fatal(server.ListenAndServe())

@@ -15,11 +15,16 @@ type DB struct {
 
 type DBStructure struct {
 	Chirps map[int]Chirp `json:"chirps"`
+	Users  map[int]User  `json:"users"`
 }
 
 type Chirp struct {
 	ID   int    `json:"id"`
 	Body string `json:"body"`
+}
+
+type User struct {
+	Email string `json:"email"`
 }
 
 // NewDB creates a new database connection
@@ -41,9 +46,7 @@ func (db *DB) CreateChirp(body string) (Chirp, error) {
 	}
 
 	if dbData.Chirps == nil {
-		dbData = DBStructure{
-			Chirps: map[int]Chirp{},
-		}
+		dbData.Chirps = map[int]Chirp{}
 	}
 
 	id := len(dbData.Chirps) + 1
@@ -60,6 +63,45 @@ func (db *DB) CreateChirp(body string) (Chirp, error) {
 
 	return chirp, nil
 }
+
+// GetChirps returns all chirps in the database
+func (db *DB) GetChirps() ([]Chirp, error) {
+	dbData, err := db.loadDB()
+	if err != nil {
+		return []Chirp{}, err
+	}
+
+	chirps := make([]Chirp, len(dbData.Chirps))
+	i := 0
+	for _, v := range dbData.Chirps {
+		chirps[i] = v
+		i++
+	}
+
+	return chirps, nil
+}
+
+func (db *DB) GetChirp(id int) (Chirp, error) {
+	dbData, err := db.loadDB()
+	if err != nil {
+		return Chirp{}, err
+	}
+
+	if chirp, ok := dbData.Chirps[id]; ok {
+		return chirp, nil
+	}
+
+	return Chirp{}, errors.New("chirp not found")
+}
+
+// func (db *DB) CreateUser() (User, error) {
+// 	dbData, err := db.loadDB()
+// 	if err != nil {
+// 		return User{}, err
+// 	}
+
+// 	if len()
+// }
 
 func (db *DB) ensureDB() error {
 	if _, err := os.Stat(db.path); errors.Is(err, os.ErrNotExist) {
@@ -109,29 +151,4 @@ func (db *DB) writeDB(dbData DBStructure) error {
 		return err
 	}
 	return nil
-
-	// keys := make([]int, len(dbData.Chirps))
-	// i := 0
-	// for k := range dbData.Chirps {
-	// 	keys[i] = k
-	// 	i++
-	// }
-	// sort.Slice(keys, func(i, j int) bool {
-	// 	return keys[i] < keys[j]
-	// })
-
-	// for _, k := range keys {
-	// 	chirp, err := json.Marshal(dbData.Chirps[k])
-	// 	if err != nil {
-	// 		log.Printf("Error marshalling chirp %s", err)
-	// 		return err
-	// 	}
-	// 	err = os.WriteFile(db.path, chirp, os.FileMode(0666))
-	// 	if err != nil {
-	// 		log.Printf("Error writing to DB file %s", err)
-	// 		return err
-	// 	}
-	// }
-
-	// return nil
 }

@@ -24,6 +24,7 @@ type Chirp struct {
 }
 
 type User struct {
+	ID    int    `json:"id"`
 	Email string `json:"email"`
 }
 
@@ -94,14 +95,30 @@ func (db *DB) GetChirp(id int) (Chirp, error) {
 	return Chirp{}, errors.New("chirp not found")
 }
 
-// func (db *DB) CreateUser() (User, error) {
-// 	dbData, err := db.loadDB()
-// 	if err != nil {
-// 		return User{}, err
-// 	}
+func (db *DB) CreateUser(email string) (User, error) {
+	dbData, err := db.loadDB()
+	if err != nil {
+		return User{}, err
+	}
 
-// 	if len()
-// }
+	if len(dbData.Users) == 0 {
+		dbData.Users = map[int]User{}
+	}
+
+	id := len(dbData.Users) + 1
+	user := User{
+		ID:    id,
+		Email: email,
+	}
+	dbData.Users[id] = user
+
+	err = db.writeDB(dbData)
+	if err != nil {
+		return User{}, err
+	}
+
+	return user, nil
+}
 
 func (db *DB) ensureDB() error {
 	if _, err := os.Stat(db.path); errors.Is(err, os.ErrNotExist) {

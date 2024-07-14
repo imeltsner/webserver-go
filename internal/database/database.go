@@ -6,8 +6,6 @@ import (
 	"log"
 	"os"
 	"sync"
-
-	"golang.org/x/crypto/bcrypt"
 )
 
 type DB struct {
@@ -45,118 +43,6 @@ func NewDB(path string) (*DB, error) {
 	}
 	err := db.ensureDB()
 	return db, err
-}
-
-// CreateChirp creates a new chirp and saves it to disk
-func (db *DB) CreateChirp(body string) (Chirp, error) {
-	dbData, err := db.loadDB()
-	if err != nil {
-		return Chirp{}, err
-	}
-
-	if dbData.Chirps == nil {
-		dbData.Chirps = map[int]Chirp{}
-	}
-
-	id := len(dbData.Chirps) + 1
-	chirp := Chirp{
-		ID:   id,
-		Body: body,
-	}
-	dbData.Chirps[id] = chirp
-
-	err = db.writeDB(dbData)
-	if err != nil {
-		return Chirp{}, err
-	}
-
-	return chirp, nil
-}
-
-// GetChirps returns all chirps in the database
-func (db *DB) GetChirps() ([]Chirp, error) {
-	dbData, err := db.loadDB()
-	if err != nil {
-		return []Chirp{}, err
-	}
-
-	chirps := make([]Chirp, len(dbData.Chirps))
-	i := 0
-	for _, v := range dbData.Chirps {
-		chirps[i] = v
-		i++
-	}
-
-	return chirps, nil
-}
-
-func (db *DB) GetChirp(id int) (Chirp, error) {
-	dbData, err := db.loadDB()
-	if err != nil {
-		return Chirp{}, err
-	}
-
-	if chirp, ok := dbData.Chirps[id]; ok {
-		return chirp, nil
-	}
-
-	return Chirp{}, errors.New("chirp not found")
-}
-
-func (db *DB) CreateUser(email, password string) (User, error) {
-	dbData, err := db.loadDB()
-	if err != nil {
-		return User{}, err
-	}
-
-	if len(dbData.Users) == 0 {
-		dbData.Users = map[int]DBUser{}
-	}
-
-	id := len(dbData.Users) + 1
-	hashWord, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.MinCost)
-	if err != nil {
-		log.Printf("Error hashing password %s", err)
-		return User{}, err
-	}
-	user := DBUser{
-		ID:       id,
-		Email:    email,
-		Password: string(hashWord),
-	}
-	dbData.Users[id] = user
-
-	err = db.writeDB(dbData)
-	if err != nil {
-		return User{}, err
-	}
-
-	res := User{
-		ID:    user.ID,
-		Email: user.Email,
-	}
-
-	return res, nil
-}
-
-func (db *DB) AuthenticateUser(user DBUser) (User, error) {
-	dbData, err := db.loadDB()
-	if err != nil {
-		return User{}, err
-	}
-
-	for k, v := range dbData.Users {
-		if v.Email == user.Email {
-			err = bcrypt.CompareHashAndPassword([]byte(v.Password), []byte(user.Password))
-			if err != nil {
-				return User{}, bcrypt.ErrMismatchedHashAndPassword
-			} else {
-				return User{ID: k, Email: v.Email}, nil
-			}
-		}
-	}
-
-	return User{}, errors.New("user not found")
 }
 
 func (db *DB) ensureDB() error {

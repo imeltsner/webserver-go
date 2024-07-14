@@ -3,13 +3,16 @@ package main
 import (
 	"log"
 	"net/http"
+	"os"
 
 	"github.com/imeltsner/webserver-go/internal/database"
+	"github.com/joho/godotenv"
 )
 
 type apiConfig struct {
 	fileserverHits int
 	db             *database.DB
+	jwtSecret      string
 }
 
 func healthHandler(w http.ResponseWriter, r *http.Request) {
@@ -20,6 +23,8 @@ func healthHandler(w http.ResponseWriter, r *http.Request) {
 
 func main() {
 	const port = "8080"
+	godotenv.Load()
+	jwtSecret := os.Getenv("JWT_SECRET")
 
 	mux := http.NewServeMux()
 	server := &http.Server{
@@ -36,6 +41,7 @@ func main() {
 	cfg := apiConfig{
 		db:             db,
 		fileserverHits: 0,
+		jwtSecret:      jwtSecret,
 	}
 
 	mux.Handle("/app/*", cfg.middlewareMetricsInc(http.StripPrefix("/app", http.FileServer(http.Dir(".")))))

@@ -24,3 +24,4 @@ go.work.sum
 out
 requests.http
 database.json
+.env

@@ -6,6 +6,8 @@ import (
 	"log"
 	"os"
 	"sync"
+
+	"golang.org/x/crypto/bcrypt"
 )
 
 type DB struct {
@@ -14,13 +16,19 @@ type DB struct {
 }
 
 type DBStructure struct {
-	Chirps map[int]Chirp `json:"chirps"`
-	Users  map[int]User  `json:"users"`
+	Chirps map[int]Chirp  `json:"chirps"`
+	Users  map[int]DBUser `json:"users"`
 }
 
 type Chirp struct {
 	ID   int    `json:"id"`
 	Body string `json:"body"`
+}
+
+type DBUser struct {
+	ID       int    `json:"id"`
+	Email    string `json:"email"`
+	Password string `json:"password"`
 }
 
 type User struct {
@@ -95,20 +103,26 @@ func (db *DB) GetChirp(id int) (Chirp, error) {
 	return Chirp{}, errors.New("chirp not found")
 }
 
-func (db *DB) CreateUser(email string) (User, error) {
+func (db *DB) CreateUser(email, password string) (User, error) {
 	dbData, err := db.loadDB()
 	if err != nil {
 		return User{}, err
 	}
 
 	if len(dbData.Users) == 0 {
-		dbData.Users = map[int]User{}
+		dbData.Users = map[int]DBUser{}
 	}
 
 	id := len(dbData.Users) + 1
-	user := User{
-		ID:    id,
-		Email: email,
+	hashWord, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.MinCost)
+	if err != nil {
+		log.Printf("Error hashing password %s", err)
+		return User{}, err
+	}
+	user := DBUser{
+		ID:       id,
+		Email:    email,
+		Password: string(hashWord),
 	}
 	dbData.Users[id] = user
 
@@ -117,7 +131,32 @@ func (db *DB) CreateUser(email string) (User, error) {
 		return User{}, err
 	}
 
-	return user, nil
+	res := User{
+		ID:    user.ID,
+		Email: user.Email,
+	}
+
+	return res, nil
+}
+
+func (db *DB) AuthenticateUser(user DBUser) (User, error) {
+	dbData, err := db.loadDB()
+	if err != nil {
+		return User{}, err
+	}
+
+	for k, v := range dbData.Users {
+		if v.Email == user.Email {
+			err = bcrypt.CompareHashAndPassword([]byte(v.Password), []byte(user.Password))
+			if err != nil {
+				return User{}, bcrypt.ErrMismatchedHashAndPassword
+			} else {
+				return User{ID: k, Email: v.Email}, nil
+			}
+		}
+	}
+
+	return User{}, errors.New("user not found")
 }
 
 func (db *DB) ensureDB() error {

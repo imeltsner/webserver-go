@@ -37,8 +37,8 @@ func (cfg *apiConfig) createChirpHandler(w http.ResponseWriter, r *http.Request)
 	respondWithJSON(w, 201, chirp)
 }
 
-func (cfg *apiConfig) getChirpsHandler(w http.ResponseWriter, r *http.Request) {
-	data, err := cfg.db.GetChirps()
+func (cfg *apiConfig) getAllChirpsHandler(w http.ResponseWriter, r *http.Request) {
+	data, err := cfg.db.GetAllChirps()
 	if err != nil {
 		respondWithError(w, 500, "error gettings chirps")
 		return

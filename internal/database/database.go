@@ -18,11 +18,6 @@ type DBStructure struct {
 	Users  map[int]DBUser `json:"users"`
 }
 
-type Chirp struct {
-	ID   int    `json:"id"`
-	Body string `json:"body"`
-}
-
 type DBUser struct {
 	ID       int    `json:"id"`
 	Email    string `json:"email"`

@@ -2,6 +2,11 @@ package database
 
 import "errors"
 
+type Chirp struct {
+	ID   int    `json:"id"`
+	Body string `json:"body"`
+}
+
 // CreateChirp creates a new chirp and saves it to disk
 func (db *DB) CreateChirp(body string) (Chirp, error) {
 	dbData, err := db.loadDB()
@@ -28,8 +33,8 @@ func (db *DB) CreateChirp(body string) (Chirp, error) {
 	return chirp, nil
 }
 
-// GetChirps returns all chirps in the database
-func (db *DB) GetChirps() ([]Chirp, error) {
+// GetAllChirps returns all chirps in the database
+func (db *DB) GetAllChirps() ([]Chirp, error) {
 	dbData, err := db.loadDB()
 	if err != nil {
 		return []Chirp{}, err
